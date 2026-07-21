@@ -420,10 +420,16 @@ const Dashboard = () => {
             </div>
           </a>
 
-          <div className="module-card module-card--soon" style={{ animationDelay: '0.08s' }}>
+          <a
+            href="https://u-corporativa-s-p.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="module-card"
+            style={{ animationDelay: '0.08s' }}
+          >
             <div className="card-accent-bar" style={{ background: '#a855f7' }} />
             <div className="card-top">
-              <span className="card-tag card-tag--soon">Próximamente</span>
+              <span className="card-tag">Recurso</span>
               <div className="card-icon-wrap" style={{ background: '#fdf4ff', color: '#a855f7' }}>
                 <div className="card-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -440,11 +446,14 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="card-footer">
-              <span className="card-cta" style={{ color: '#94a3b8' }}>
-                Próximamente disponible
+              <span className="card-cta" style={{ color: '#a855f7' }}>
+                Acceder
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="card-arrow">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </span>
             </div>
-          </div>
+          </a>
         </div>
       </section>
 
