@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Portal de Gestión Humana - Solutions & Payroll",
   description: "Portal centralizado de formularios de Gestión Humana",
+  icons: {
+    icon: "/Logo syp1.png",
+  },
 };
 
 export default function RootLayout({
