@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  entraidSub  String   @unique @map("entraid_sub")
+  email       String
+  name        String
+  area        String?
+  rol         String   @default("empleado")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  evaluacionesHechas  Evaluacion[] @relation("Evaluador")
+
+  @@map("users")
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("areas")
+}
+
+model Competencia {
+  id         String      @id @default(cuid())
+  tipo       String
+  nombre     String
+  respuestas Respuesta[]
+
+  @@map("competencias")
+}
+
+model Evaluacion {
+  id               String   @id @default(cuid())
+  evaluadorId      String   @map("evaluador_id")
+  evaluadoNombre   String   @map("evaluado_nombre")
+  tipo             String
+  periodo          String
+  notaFinal        Decimal? @map("nota_final")
+  notaPotencial    Decimal? @map("nota_potencial")
+  categoriaNineBox String?  @map("categoria_nine_box")
+  estado           String   @default("completada")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  evaluador   User       @relation("Evaluador", fields: [evaluadorId], references: [id])
+  respuestas  Respuesta[]
+
+  @@map("evaluaciones")
+}
+
+model Respuesta {
+  id            String     @id @default(cuid())
+  evaluacionId  String     @map("evaluacion_id")
+  competenciaId String     @map("competencia_id")
+  puntuacion    Int
+
+  evaluacion    Evaluacion  @relation(fields: [evaluacionId], references: [id])
+  competencia   Competencia @relation(fields: [competenciaId], references: [id])
+
+  @@map("respuestas")
+}

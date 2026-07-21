@@ -1,0 +1,83 @@
+.ed-grid-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  padding: 1.75rem;
+}
+
+.ed-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ed-dato-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.ed-dato-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ed-dato-nota {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--navy-800);
+}
+
+.ea-comportamiento-text-detalle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0.3rem 0 0;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-width: 400px;
+}
+
+.ea-nine-box-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ea-nine-box--alto {
+  color: #059669;
+  background: #ecfdf5;
+}
+
+.ea-nine-box--medio {
+  color: #d97706;
+  background: #fffbeb;
+}
+
+.ea-nine-box--bajo {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.score-pill--readonly {
+  cursor: default;
+}
+
+.score-pill--readonly:hover:not(.score-pill--active) {
+  background: none;
+  color: var(--text-secondary);
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .ed-grid-resumen {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 1.25rem;
+  }
+}
