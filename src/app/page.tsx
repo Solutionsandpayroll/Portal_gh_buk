@@ -69,6 +69,8 @@ const Dashboard = () => {
     },
   ];
 
+  const formulariosVisibles = rol === 'admin' ? formularios : formularios.filter(f => f.id !== 3);
+
   return (
     <div className="dashboard-root">
 
@@ -208,7 +210,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="modules-grid">
-          {formularios.map((form, i) => (
+          {formulariosVisibles.map((form, i) => (
             form.subOptions ? (
               <div
                 key={form.id}
