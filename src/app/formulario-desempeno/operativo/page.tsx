@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import JSZip from 'jszip';
 import '../../formulario-desempeno/FormularioDesempenoEstrategico.css';
+import '../../evaluacion-anual/EvaluacionAnual.css';
 import PersonSelector from '@/components/PersonSelector';
 
 /* ── Tipos ── */
@@ -15,16 +16,19 @@ interface FormData {
   areaTrabajo: string;
   cargoActual: string;
   fecha: string;
-  proposito: 'periodo_prueba' | 'movimiento_interno' | 'gestion_desempeno' | '';
+  proposito: 'periodo_prueba' | 'ascenso' | 'seguimiento_desempeno' | 'otro_caso' | '';
   /* Transversales */
   integridadScore: Score;
-  calidadScore: Score;
   clienteScore: Score;
   cambioScore: Score;
   /* Nivel Operativo */
   logroScore: Score;
   aprendizajeScore: Score;
   colaborativoScore: Score;
+  /* Desempeño del Cargo */
+  calidadScore: Score;
+  cantidadScore: Score;
+  tiempoScore: Score;
 }
 
 const initialForm: FormData = {
@@ -35,12 +39,14 @@ const initialForm: FormData = {
   fecha: '',
   proposito: '',
   integridadScore: null,
-  calidadScore: null,
   clienteScore: null,
   cambioScore: null,
   logroScore: null,
   aprendizajeScore: null,
   colaborativoScore: null,
+  calidadScore: null,
+  cantidadScore: null,
+  tiempoScore: null,
 };
 
 function escXml(s: string): string {
@@ -94,17 +100,18 @@ function patchCell(xml: string, ref: string, value: string | number): string {
 }
 
 const propositoLabel: Record<string, string> = {
-  periodo_prueba: 'Período de Prueba',
-  movimiento_interno: 'Movimiento Interno',
-  gestion_desempeno: 'Gestión Desempeño',
+  periodo_prueba: 'Período de prueba',
+  ascenso: 'Ascenso',
+  seguimiento_desempeno: 'Seguimiento por desempeño',
+  otro_caso: 'Otro — caso especial',
 };
 
 const criterios = [
   { valor: 5, label: 'SOBRESALIENTE' },
-  { valor: 4, label: 'SUPERA' },
-  { valor: 3, label: 'CUMPLE' },
-  { valor: 2, label: 'LIMITADA' },
-  { valor: 1, label: 'NO CUMPLE' },
+  { valor: 4, label: 'SUPERIOR' },
+  { valor: 3, label: 'ESPERADO' },
+  { valor: 2, label: 'BAJO' },
+  { valor: 1, label: 'MUY BAJO' },
 ];
 
 const transversales = [
@@ -115,14 +122,6 @@ const transversales = [
       'Capacidad para actuar con honestidad, ética y coherencia, respetando normas y valores organizacionales en todas sus decisiones y acciones.',
     pregunta:
       '¿En qué medida la persona actúa con honestidad, coherencia y respeto por las normas de la empresa en su trabajo diario?',
-  },
-  {
-    key: 'calidadScore' as keyof FormData,
-    nombre: 'CALIDAD DE TRABAJO',
-    descripcion:
-      'Capacidad para ejecutar sus funciones con precisión, orden y cumplimiento de estándares, asegurando resultados confiables y oportunos.',
-    pregunta:
-      '¿En qué medida la persona entrega su trabajo con precisión, orden y cumplimiento de los estándares establecidos?',
   },
   {
     key: 'clienteScore' as keyof FormData,
@@ -169,6 +168,54 @@ const nivelOperativo = [
   },
 ];
 
+const desempenoCargo = [
+  {
+    key: 'calidadScore' as keyof FormData,
+    nombre: 'CALIDAD',
+    descripcion:
+      'Evalúa el nivel de precisión, efectividad, cumplimiento de estándares y ausencia de errores en la ejecución de las responsabilidades y entregables asignados.',
+    pregunta:
+      '¿En qué medida la persona cumple con los estándares de calidad esperados en sus entregables?',
+    comportamientos: {
+      5: 'Entrega sin errores relevantes, con alto cumplimiento de estándares y mejoras visibles.',
+      4: 'Entrega con precisión y muy bajo reproceso; cumple estándares de forma consistente.',
+      3: 'Cumple estándares básicos de calidad; los ajustes requeridos son menores.',
+      2: 'Presenta errores o reprocesos frecuentes que requieren acompañamiento.',
+      1: 'No cumple los estándares mínimos de calidad y requiere reproceso significativo.',
+    },
+  },
+  {
+    key: 'cantidadScore' as keyof FormData,
+    nombre: 'CANTIDAD / PRODUCTIVIDAD',
+    descripcion:
+      'Evalúa el nivel de cumplimiento del volumen de trabajo, actividades, productos, servicios o entregables esperados de acuerdo con las responsabilidades definidas para el cargo.',
+    pregunta:
+      '¿En qué medida la persona cumple con el volumen de trabajo y los entregables esperados para su cargo?',
+    comportamientos: {
+      5: 'Supera de forma consistente el volumen esperado sin afectar la calidad.',
+      4: 'Cumple y en ocasiones supera el volumen esperado, manteniendo orden y prioridades.',
+      3: 'Cumple el volumen esperado de tareas de acuerdo con su rol y recursos disponibles.',
+      2: 'Entrega un volumen inferior al esperado o requiere seguimiento frecuente para cerrar tareas.',
+      1: 'No alcanza el volumen mínimo esperado, aun con orientación o seguimiento.',
+    },
+  },
+  {
+    key: 'tiempoScore' as keyof FormData,
+    nombre: 'TIEMPO / OPORTUNIDAD',
+    descripcion:
+      'Evalúa el nivel de cumplimiento de los plazos, cronogramas, tiempos de respuesta y fechas establecidas para la ejecución de las responsabilidades y entrega de resultados.',
+    pregunta:
+      '¿En qué medida la persona cumple con los plazos y tiempos establecidos para sus responsabilidades?',
+    comportamientos: {
+      5: 'Entrega antes o dentro de los plazos, anticipando riesgos y priorizando adecuadamente.',
+      4: 'Cumple plazos de forma consistente y comunica oportunamente posibles desviaciones.',
+      3: 'Entrega dentro de los tiempos definidos, con seguimiento normal del líder.',
+      2: 'Presenta retrasos recurrentes o dificultad para priorizar, afectando la oportunidad.',
+      1: 'No cumple plazos críticos y afecta la continuidad o el resultado del proceso.',
+    },
+  },
+];
+
 /* ── Componente fila ── */
 interface CompetenciaRowProps {
   nombre: string;
@@ -210,6 +257,46 @@ const CompetenciaRow = ({ nombre, descripcion, pregunta, valor, onChange }: Comp
   </div>
 );
 
+/* ── Componente fila para Desempeño del Cargo (tarjetas con descripción) ── */
+interface DesempenoCargoRowProps {
+  nombre: string;
+  descripcion: string;
+  pregunta: string;
+  valor: Score;
+  comportamientos: Record<number, string>;
+  onChange: (v: Score) => void;
+}
+
+const DesempenoCargoRow = ({ nombre, descripcion, pregunta, valor, comportamientos, onChange }: DesempenoCargoRowProps) => (
+  <div className="competencia-row">
+    <div className="competencia-info">
+      <span className="competencia-nombre">{nombre}</span>
+      <p className="competencia-desc">{descripcion}</p>
+      <span className="competencia-pregunta-label">Pregunta</span>
+      <p className="competencia-pregunta">{pregunta}</p>
+    </div>
+    <div className="competencia-score">
+      <span className="score-label">Calificación</span>
+      <div className="ea-score-grid">
+        {criterios.map((c) => (
+          <button
+            key={c.valor}
+            type="button"
+            className={`ea-score-card${valor === c.valor ? ' ea-score-card--active' : ''}`}
+            onClick={() => onChange(c.valor as Score)}
+          >
+            <div className="ea-score-card-header">
+              <span className="ea-score-card-num">{c.valor}</span>
+              <span className="ea-score-card-label">{c.label}</span>
+            </div>
+            <p className="ea-score-card-desc">{comportamientos[c.valor] || ''}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 /* ── Página ── */
 const FormularioDesempenoOperativo = () => {
   const [form, setForm] = useState<FormData>(initialForm);
@@ -242,16 +329,18 @@ const FormularioDesempenoOperativo = () => {
         F7:  form.nombreEvaluado,
         F8:  form.nombreEvaluador,
         F9:  form.areaTrabajo,
-        N7:  form.fecha,
-        N8:  form.cargoActual,
-        N9:  propositoLabel[form.proposito] ?? form.proposito,
-        G26: form.integridadScore   ?? 0,
-        G27: form.calidadScore      ?? 0,
-        G28: form.clienteScore      ?? 0,
-        G29: form.cambioScore       ?? 0,
-        G30: form.logroScore        ?? 0,
-        G31: form.aprendizajeScore  ?? 0,
-        G32: form.colaborativoScore ?? 0,
+        M7:  form.fecha,
+        M8:  form.cargoActual,
+        M9:  propositoLabel[form.proposito] ?? form.proposito,
+        N24: form.integridadScore   ?? 0,
+        N25: form.clienteScore      ?? 0,
+        N26: form.cambioScore       ?? 0,
+        N27: form.logroScore        ?? 0,
+        N28: form.aprendizajeScore  ?? 0,
+        N29: form.colaborativoScore ?? 0,
+        N34: form.calidadScore      ?? 0,
+        N39: form.cantidadScore     ?? 0,
+        N44: form.tiempoScore       ?? 0,
       };
       for (const [ref, value] of Object.entries(cellMap)) {
         wsXml = patchCell(wsXml, ref, value);
@@ -407,9 +496,10 @@ const FormularioDesempenoOperativo = () => {
                 <label className="field-label">Propósito de la Evaluación <span className="required">*</span></label>
                 <div className="radio-group">
                   {[
-                    { value: 'periodo_prueba',     label: 'Período de Prueba' },
-                    { value: 'movimiento_interno', label: 'Movimiento Interno' },
-                    { value: 'gestion_desempeno',  label: 'Gestión Desempeño' },
+                    { value: 'periodo_prueba',        label: 'Período de prueba' },
+                    { value: 'ascenso',               label: 'Ascenso' },
+                    { value: 'seguimiento_desempeno', label: 'Seguimiento por desempeño' },
+                    { value: 'otro_caso',             label: 'Otro — caso especial' },
                   ].map((opt) => (
                     <label key={opt.value}
                       className={`radio-option${form.proposito === opt.value ? ' selected' : ''}`}>
@@ -455,7 +545,7 @@ const FormularioDesempenoOperativo = () => {
           {/* Sección 2: Competencias */}
           <section className="form-section form-section--competencias">
             <div className="section-header">
-              <h2 className="section-title">Competencias Transversales y por Nivel de Cargo</h2>
+              <h2 className="section-title">Competencias Transversales, por Nivel de Cargo y Desempeño</h2>
               <p className="section-subtitle">Calificación</p>
             </div>
 
@@ -477,6 +567,19 @@ const FormularioDesempenoOperativo = () => {
               <div className="competencias-list">
                 {nivelOperativo.map(({ key, ...rest }) => (
                   <CompetenciaRow key={key} {...rest}
+                    valor={form[key] as Score}
+                    onChange={(v) => setField(key, v)} />
+                ))}
+              </div>
+            </div>
+
+            <div className="competencias-group">
+              <h3 className="competencias-group-title competencias-group-title--estrategico">
+                Desempeño del Cargo
+              </h3>
+              <div className="competencias-list">
+                {desempenoCargo.map(({ key, ...rest }) => (
+                  <DesempenoCargoRow key={key} {...rest}
                     valor={form[key] as Score}
                     onChange={(v) => setField(key, v)} />
                 ))}
