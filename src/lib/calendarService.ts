@@ -18,15 +18,12 @@ function normalizeIsoLocal(input: string) {
 }
 
 function isoLocalToMs(isoLocal: string) {
-  const iso = normalizeIsoLocal(isoLocal)
-  const [datePart, timePart] = iso.split("T")
-  if (!datePart || !timePart) return Number.NaN
-
+  const [datePart, timePart] = isoLocal.split("T")
+  if (!datePart || !timePart) return NaN
   const [y, m, d] = datePart.split("-").map(Number)
-  const [hh, mm, ss] = timePart.split(":").map(Number)
-  if ([y, m, d, hh, mm].some((v) => Number.isNaN(v))) return Number.NaN
-
-  return Date.UTC(y, m - 1, d, hh, mm, Number.isNaN(ss) ? 0 : ss, 0)
+  const [hh, mm] = timePart.split(":").map(Number)
+  if ([y, m, d, hh, mm].some(Number.isNaN)) return NaN
+  return new Date(Date.UTC(y, m - 1, d, hh, mm, 0)).getTime()
 }
 
 function msToIsoLocal(ms: number) {
@@ -169,12 +166,14 @@ function buildAvailableSlots(startIso: string, endIso: string, schedule: any, bu
   const availabilityView = String(schedule?.availabilityView || "")
   const rangeStartMs = isoLocalToMs(startIso)
   const rangeEndMs = isoLocalToMs(endIso)
-  const available: { start: string; end: string }[] = []
+  if (Number.isNaN(rangeStartMs) || Number.isNaN(rangeEndMs)) return []
 
-  for (let index = 0; ; index += 1) {
+  const available: { start: string; end: string }[] = []
+  const totalSlots = Math.floor((rangeEndMs - rangeStartMs) / (SLOT_MINUTES * 60 * 1000))
+
+  for (let index = 0; index < totalSlots; index++) {
     const slotStartMs = rangeStartMs + index * SLOT_MINUTES * 60 * 1000
     const slotEndMs = slotStartMs + SLOT_MINUTES * 60 * 1000
-    if (slotEndMs > rangeEndMs) break
 
     const slotStart = msToIsoLocal(slotStartMs)
     const slotEnd = msToIsoLocal(slotEndMs)

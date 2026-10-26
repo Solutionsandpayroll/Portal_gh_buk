@@ -6,6 +6,7 @@ import JSZip from 'jszip';
 import '../../formulario-desempeno/FormularioDesempenoEstrategico.css';
 import '../../evaluacion-anual/EvaluacionAnual.css';
 import PersonSelector from '@/components/PersonSelector';
+import AgregarColaborador from '@/components/AgregarColaborador';
 
 /* ── Tipos ── */
 type Score = 1 | 2 | 3 | 4 | 5 | null;
@@ -293,12 +294,24 @@ const FormularioDesempenoTactico = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [colaboradores, setColaboradores] = useState<string[]>([]);
   const { data: session } = useSession();
   const userName = session?.user?.name || 'Usuario Corporativo';
+  const rol = (session?.user as any)?.rol;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    fetch('/api/colaboradores')
+      .then(r => r.json())
+      .then((data: { nombre: string }[]) => {
+        if (Array.isArray(data)) setColaboradores(data.map(c => c.nombre));
+      })
+      .catch(() => {});
   }, []);
+
+  const handleColaboradorAgregado = (nombre: string) => {
+    setColaboradores(prev => Array.from(new Set([...prev, nombre])).sort());
+  };
 
   const setField = (field: keyof FormData, value: string | Score) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -453,17 +466,18 @@ const FormularioDesempenoTactico = () => {
 
           {/* Sección 1: Datos generales */}
           <section className="form-section">
-            <div className="section-header">
+            <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <h2 className="section-title">Datos del Evaluado</h2>
+              {rol === 'admin' && <AgregarColaborador onAdded={handleColaboradorAgregado} />}
             </div>
             <div className="fields-grid fields-grid--2">
               <div className="field-group">
                 <label className="field-label">Nombre del Evaluado <span className="required">*</span></label>
-                <PersonSelector value={form.nombreEvaluado} onChange={(v) => setField('nombreEvaluado', v)} placeholder="Nombre completo" required />
+                <PersonSelector value={form.nombreEvaluado} onChange={(v) => setField('nombreEvaluado', v)} placeholder="Nombre completo" required options={colaboradores.length > 0 ? colaboradores : undefined} />
               </div>
               <div className="field-group">
                 <label className="field-label">Nombre del Evaluador <span className="required">*</span></label>
-                <PersonSelector value={form.nombreEvaluador} onChange={(v) => setField('nombreEvaluador', v)} placeholder="Nombre completo" required />
+                <PersonSelector value={form.nombreEvaluador} onChange={(v) => setField('nombreEvaluador', v)} placeholder="Nombre completo" required options={colaboradores.length > 0 ? colaboradores : undefined} />
               </div>
               <div className="field-group">
                 <label className="field-label">Área de Trabajo <span className="required">*</span></label>

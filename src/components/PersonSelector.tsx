@@ -90,7 +90,7 @@ export default function PersonSelector({ value, onChange, placeholder, required,
             <ul>
               {filtered.map((p, i) => (
                 <li
-                  key={p}
+                  key={`${p}-${i}`}
                   className={`person-option${i === highlight ? ' highlighted' : ''}`}
                   onMouseDown={(ev) => { ev.preventDefault(); pick(p); }}
                   onMouseEnter={() => setHighlight(i)}

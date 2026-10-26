@@ -11,7 +11,6 @@ const prisma = new PrismaClient({ adapter })
 
 const competencias = [
   { tipo: "transversal", nombre: "ACTÚA CON INTEGRIDAD" },
-  { tipo: "transversal", nombre: "CALIDAD DE TRABAJO" },
   { tipo: "transversal", nombre: "ORIENTACIÓN AL CLIENTE" },
   { tipo: "transversal", nombre: "ADAPTACIÓN AL CAMBIO" },
   { tipo: "estrategico", nombre: "DESARROLLO DE EQUIPOS DE ALTO DESEMPEÑO" },
@@ -21,11 +20,9 @@ const competencias = [
   { tipo: "operativo", nombre: "ORIENTACIÓN AL LOGRO" },
   { tipo: "operativo", nombre: "CAPACIDAD DE APRENDIZAJE" },
   { tipo: "operativo", nombre: "TRABAJO COLABORATIVO" },
-  { tipo: "potencial", nombre: "CAPACIDAD DE APRENDIZAJE (LEARNING AGILITY)" },
-  { tipo: "potencial", nombre: "ADAPTABILIDAD Y MANEJO DE LA INCERTIDUMBRE" },
-  { tipo: "potencial", nombre: "CAPACIDAD PARA ASUMIR MAYORES RESPONSABILIDADES" },
-  { tipo: "potencial", nombre: "INFLUENCIA Y LIDERAZGO POTENCIAL" },
-  { tipo: "potencial", nombre: "PENSAMIENTO ANALÍTICO Y RESOLUCIÓN DE PROBLEMAS" },
+  { tipo: "potencial", nombre: "AGILIDAD DE APRENDIZAJE" },
+  { tipo: "potencial", nombre: "GESTIÓN DE LA COMPLEJIDAD Y ADAPTACIÓN" },
+  { tipo: "potencial", nombre: "CAPACIDAD PARA ASUMIR MAYOR RESPONSABILIDAD" },
 ]
 
 async function main() {

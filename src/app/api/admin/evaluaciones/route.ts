@@ -21,6 +21,11 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       include: {
         evaluador: { select: { name: true } },
+        respuestas: {
+          include: {
+            competencia: { select: { nombre: true, tipo: true } },
+          },
+        },
       },
     })
 

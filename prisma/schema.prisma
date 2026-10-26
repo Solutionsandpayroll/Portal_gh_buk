@@ -17,7 +17,8 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  evaluacionesHechas  Evaluacion[] @relation("Evaluador")
+  evaluacionesHechas   Evaluacion[]  @relation("Evaluador")
+  evaluacionesRecibidas Evaluacion[] @relation("Evaluado")
 
   @@map("users")
 }
@@ -40,18 +41,25 @@ model Competencia {
 }
 
 model Evaluacion {
-  id               String   @id @default(cuid())
-  evaluadorId      String   @map("evaluador_id")
-  evaluadoNombre   String   @map("evaluado_nombre")
-  tipo             String
-  periodo          String
-  notaFinal        Decimal? @map("nota_final")
-  notaPotencial    Decimal? @map("nota_potencial")
-  categoriaNineBox String?  @map("categoria_nine_box")
-  estado           String   @default("completada")
-  createdAt        DateTime @default(now()) @map("created_at")
+  id                      String   @id @default(cuid())
+  evaluadorId             String   @map("evaluador_id")
+  evaluadoId              String?  @map("evaluado_id")
+  evaluadoNombre          String   @map("evaluado_nombre")
+  tipo                    String
+  cargo                   String?
+  periodo                 String
+  calidad                 Int?
+  cantidadProductividad   Int?     @map("cantidad_productividad")
+  tiempoOportunidad       Int?     @map("tiempo_oportunidad")
+  notaFinal               Decimal? @map("nota_final")
+  notaPotencial           Decimal? @map("nota_potencial")
+  categoriaNineBox        String?  @map("categoria_nine_box")
+  feedback                String?
+  estado                  String   @default("completada")
+  createdAt               DateTime @default(now()) @map("created_at")
 
   evaluador   User       @relation("Evaluador", fields: [evaluadorId], references: [id])
+  evaluado    User?      @relation("Evaluado", fields: [evaluadoId], references: [id])
   respuestas  Respuesta[]
 
   @@map("evaluaciones")
@@ -62,9 +70,74 @@ model Respuesta {
   evaluacionId  String     @map("evaluacion_id")
   competenciaId String     @map("competencia_id")
   puntuacion    Int
+  nivel         String     @default("")
 
   evaluacion    Evaluacion  @relation(fields: [evaluacionId], references: [id])
   competencia   Competencia @relation(fields: [competenciaId], references: [id])
 
   @@map("respuestas")
+}
+
+model PeopleSolicitud {
+  id              String   @id @default(cuid())
+  categoria       String
+  beneficioId     String   @map("beneficio_id")
+  beneficioLabel  String   @map("beneficio_label")
+  nombre          String?
+  observaciones   String?
+  correoContacto  String?  @map("correo_contacto")
+  duracionMinutos Int?     @map("duracion_minutos")
+  fechas          String[]
+  fechaCita       String?  @map("fecha_cita")
+  horaSesion      String?  @map("hora_sesion")
+  eventId         String?  @map("event_id")
+  teamsMeetingUrl String?  @map("teams_meeting_url")
+  adjuntoUrl      String?  @map("adjunto_url")
+  adjuntoName     String?  @map("adjunto_name")
+  estado          String   @default("pendiente")
+  usuarioId       String?  @map("usuario_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  campos PeopleSolicitudCampo[]
+
+  @@index([categoria])
+  @@index([beneficioId])
+  @@index([estado])
+  @@map("people_solicitudes")
+}
+
+model PeopleSolicitudCampo {
+  id          String   @id @default(cuid())
+  solicitudId String   @map("solicitud_id")
+  nombre      String
+  valor       String
+
+  solicitud PeopleSolicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  @@index([solicitudId])
+  @@map("people_solicitud_campos")
+}
+
+model Colaborador {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("colaboradores")
+}
+
+model FormField {
+  id          String  @id @default(cuid())
+  beneficioId String  @map("beneficio_id")
+  label       String
+  name        String
+  type        String  @default("text")
+  required    Boolean @default(false)
+  placeholder String?
+  options     String?
+  orden       Int     @default(0)
+  columnSpan  Int     @default(1) @map("column_span")
+
+  @@map("form_fields")
 }

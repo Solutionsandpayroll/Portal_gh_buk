@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import JSZip from "jszip"
-
-function escXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-}
+import ExcelJS from "exceljs"
 
 export async function GET(
   _request: Request,
@@ -40,56 +36,115 @@ export async function GET(
       operativo: "Operativo",
     }
 
-    const rows = [
-      ["Evaluado", evaluacion.evaluadoNombre],
-      ["Evaluador", evaluacion.evaluador.name],
-      ["Nivel", tipoLabel[evaluacion.tipo] || evaluacion.tipo],
-      ["Periodo", evaluacion.periodo],
-      ["Fecha", new Date(evaluacion.createdAt).toLocaleDateString("es-CO")],
-      [],
-      ["Competencia", "Tipo", "Puntuación"],
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = "Portal Gestión Humana"
+    workbook.created = new Date()
+
+    const sheet = workbook.addWorksheet("Evaluación")
+
+    // Encabezados
+    const headers = [
+      { key: "label", header: "Campo", width: 25 },
+      { key: "value", header: "Valor", width: 40 },
+    ]
+    sheet.columns = headers
+
+    // Datos generales
+    const dataRows = [
+      { label: "Evaluado", value: evaluacion.evaluadoNombre },
+      { label: "Evaluador", value: evaluacion.evaluador.name },
+      { label: "Nivel", value: tipoLabel[evaluacion.tipo] || evaluacion.tipo },
+      { label: "Periodo", value: evaluacion.periodo },
+      { label: "Fecha", value: new Date(evaluacion.createdAt).toLocaleDateString("es-CO") },
+    ]
+
+    dataRows.forEach((row) => {
+      const r = sheet.addRow(row)
+      r.font = { bold: true }
+    })
+
+    // Separador
+    sheet.addRow({ label: "", value: "" })
+
+    // Encabezados competencias
+    sheet.addRow({ label: "Competencia", value: "" }).font = { bold: true }
+
+    const compHeader = sheet.addRow({ label: "Nombre", value: "Tipo", puntuacion: "Puntuación" })
+    compHeader.font = { bold: true }
+    compHeader.alignment = { horizontal: "left" }
+
+    sheet.columns = [
+      { key: "label", header: "Campo", width: 25 },
+      { key: "value", header: "Valor", width: 20 },
+      { key: "puntuacion", header: "", width: 15 },
     ]
 
     for (const r of evaluacion.respuestas) {
-      rows.push([r.competencia.nombre, r.competencia.tipo, String(r.puntuacion)])
+      sheet.addRow({ label: r.competencia.nombre, value: r.competencia.tipo, puntuacion: r.puntuacion })
     }
 
-    rows.push([])
-    rows.push(["Nota Final", "", String(evaluacion.notaFinal ? Number(evaluacion.notaFinal).toFixed(1) : "—")])
+    // Separador
+    sheet.addRow({ label: "", value: "", puntuacion: "" })
 
-    const colLetters = ["A", "B", "C"]
-    let sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane yOffset="1" xSplit="0" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-<cols><col min="1" max="1" width="30" customWidth="1"/><col min="2" max="2" width="20" customWidth="1"/><col min="3" max="3" width="15" customWidth="1"/></cols>
-<sheetData>`
-
-    for (let r = 0; r < rows.length; r++) {
-      const rowNum = r + 1
-      sheetXml += `<row r="${rowNum}">`
-      for (let c = 0; c < rows[r].length; c++) {
-        const cell = colLetters[c] + rowNum
-        const value = rows[r][c]
-        sheetXml += `<c r="${cell}" t="inlineStr"><is><t xml:space="preserve">${escXml(value)}</t></is></c>`
-      }
-      sheetXml += "</row>"
+    // Calcular Desempeño del Cargo
+    let desempenoCargo: number | null = null
+    if (evaluacion.calidad !== null && evaluacion.cantidadProductividad !== null && evaluacion.tiempoOportunidad !== null) {
+      desempenoCargo = (evaluacion.calidad + evaluacion.cantidadProductividad + evaluacion.tiempoOportunidad) / 3
     }
 
-    sheetXml += "</sheetData></worksheet>"
+    // Calcular Competencias (promedio ponderado transversal + nivel)
+    const PESOS: Record<string, { transversal: number; nivel: number }> = {
+      operativo: { transversal: 0.4, nivel: 0.6 },
+      tactico: { transversal: 0.4, nivel: 0.6 },
+      estrategico: { transversal: 0.3, nivel: 0.7 },
+    }
+    const nivelesUnicos = [...new Set(evaluacion.respuestas.map(r => r.nivel).filter(n => n !== 'potencial' && n !== ''))]
+    const nivel = nivelesUnicos[0] || ''
+    const peso = PESOS[nivel] || { transversal: 0.4, nivel: 0.6 }
 
-    const zip = new JSZip()
-    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`)
-    zip.folder("_rels")!.file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`)
-    zip.folder("xl")!.file("workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Evaluación" sheetId="1" r:id="rId1"/></sheets></workbook>`)
-    zip.folder("xl")!.folder("_rels")!.file("workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`)
-    zip.folder("xl")!.folder("worksheets")!.file("sheet1.xml", sheetXml)
-    zip.file("xl/sharedStrings.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="0" uniqueCount="0"/>`)
-    zip.file("xl/styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>`)
+    const transv = evaluacion.respuestas.filter(r => r.competencia.tipo === 'transversal')
+    const niv = evaluacion.respuestas.filter(r => r.competencia.tipo === nivel)
+    const promTrans = transv.length > 0 ? transv.reduce((s, r) => s + r.puntuacion, 0) / transv.length : 0
+    const promNiv = niv.length > 0 ? niv.reduce((s, r) => s + r.puntuacion, 0) / niv.length : 0
+    const notaCompetencias = (promTrans * peso.transversal) + (promNiv * peso.nivel)
 
-    const buffer = await zip.generateAsync({ type: "arraybuffer", compression: "DEFLATE" })
+    // Métricas adicionales
+    if (desempenoCargo !== null) {
+      const row = sheet.addRow({ label: "Desempeño del Cargo", value: "", puntuacion: desempenoCargo.toFixed(2) })
+      row.font = { bold: true }
+    }
+
+    if (notaCompetencias > 0) {
+      const row = sheet.addRow({ label: "Competencias", value: "", puntuacion: notaCompetencias.toFixed(2) })
+      row.font = { bold: true }
+    }
+
+    if (evaluacion.notaPotencial !== null && Number(evaluacion.notaPotencial) > 0) {
+      const row = sheet.addRow({ label: "Nota Potencial", value: "", puntuacion: Number(evaluacion.notaPotencial).toFixed(2) })
+      row.font = { bold: true }
+    }
+
+    // Nota final
+    const notaRow = sheet.addRow({
+      label: "Nota Final",
+      value: "",
+      puntuacion: evaluacion.notaFinal ? Number(evaluacion.notaFinal).toFixed(1) : "—",
+    })
+    notaRow.font = { bold: true, size: 14 }
+    notaRow.alignment = { horizontal: "left" }
+
+    // Estilos
+    sheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.alignment = { ...cell.alignment, vertical: "middle" }
+      })
+    })
+
+    // Guardar
+    const buffer = await workbook.xlsx.writeBuffer()
     const fileName = `Evaluacion_${evaluacion.evaluadoNombre.replace(/\s+/g, "_")}_${evaluacion.periodo}.xlsx`
 
-    return new NextResponse(buffer, {
+    return new NextResponse(Buffer.from(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${encodeURIComponent(fileName)}"`,

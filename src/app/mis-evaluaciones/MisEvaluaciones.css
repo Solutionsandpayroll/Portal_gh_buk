@@ -203,3 +203,54 @@
     font-size: 0.8rem;
   }
 }
+
+/* Tabs */
+.btn-tab {
+  padding: 0.6rem 1.25rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-tab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-tab--active {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: #fff;
+}
+
+.btn-tab--active:hover {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+  color: #fff;
+}
+
+/* Export button */
+.me-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: #10b981;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.me-export-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}

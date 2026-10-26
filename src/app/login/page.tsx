@@ -7,6 +7,10 @@ import './Login.css';
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
 
   const handleSignIn = async () => {
     setLoading(true);
@@ -16,6 +20,23 @@ const Login = () => {
     } catch {
       setError('No se pudo conectar con el servidor. Intenta de nuevo.');
       setLoading(false);
+    }
+  };
+
+  const handleAdminSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminLoading(true);
+    setError('');
+    const res = await signIn('admin', {
+      username: adminUser,
+      password: adminPass,
+      redirect: false,
+    });
+    if (res?.error) {
+      setError('Usuario o contraseña incorrectos.');
+      setAdminLoading(false);
+    } else {
+      window.location.href = '/';
     }
   };
 
@@ -60,6 +81,116 @@ const Login = () => {
               </>
             )}
           </button>
+
+          {!showAdmin && (
+            <button
+              type="button"
+              className="login-submit login-submit--admin"
+              onClick={() => { setShowAdmin(true); setError(''); }}
+              style={{
+                marginTop: '0.75rem',
+                background: 'transparent',
+                border: '1.5px solid #7c3aed',
+                color: '#7c3aed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.7rem 1.5rem',
+                borderRadius: '10px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                width: '100%',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Iniciar como administrador
+            </button>
+          )}
+
+          {showAdmin && (
+            <form onSubmit={handleAdminSignIn} style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <input
+                type="text"
+                placeholder="Usuario"
+                value={adminUser}
+                onChange={e => setAdminUser(e.target.value)}
+                required
+                autoComplete="username"
+                style={{
+                  padding: '0.7rem 0.9rem',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                }}
+              />
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={adminPass}
+                onChange={e => setAdminPass(e.target.value)}
+                required
+                autoComplete="current-password"
+                style={{
+                  padding: '0.7rem 0.9rem',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={adminLoading}
+                style={{
+                  background: '#7c3aed',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '0.7rem 1.5rem',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  opacity: adminLoading ? 0.6 : 1,
+                }}
+              >
+                {adminLoading ? <span className="login-spinner" /> : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <path d="M9 11l3 3L22 4" />
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    </svg>
+                    Acceder
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAdmin(false); setError(''); setAdminUser(''); setAdminPass(''); }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          )}
 
           <p className="login-footer-note">
             Usa tu cuenta corporativa de Solutions &amp; Payroll

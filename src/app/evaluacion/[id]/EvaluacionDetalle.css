@@ -44,10 +44,11 @@
 }
 
 .ea-nine-box-value {
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .ea-nine-box--alto {
@@ -80,4 +81,166 @@
     grid-template-columns: repeat(2, 1fr);
     padding: 1.25rem;
   }
+}
+
+/* Loading con blur */
+.ed-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  gap: 1.5rem;
+}
+
+.ed-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--navy-800);
+  border-radius: 50%;
+  animation: ed-spin 0.8s linear infinite;
+}
+
+@keyframes ed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ed-loading-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+/* Tabs para secciones de evaluación */
+.ed-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 2rem 0;
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.ed-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ed-tab:hover {
+  background: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.ed-tab--active {
+  background: var(--navy-800);
+  color: #fff;
+}
+
+.ed-tab--active:hover {
+  background: var(--navy-700);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .ed-tabs {
+    flex-direction: column;
+  }
+  
+  .ed-tab {
+    text-align: left;
+  }
+}
+
+/* Separación entre secciones */
+.destr-main .form-section {
+  margin-bottom: 2rem;
+}
+
+.destr-main .form-section + .form-section {
+  margin-top: 2rem;
+}
+
+/* Botones de acción más anchos */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+.form-actions .btn-cancel,
+.form-actions .btn-submit {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding: 0.875rem 1.5rem;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.form-actions .btn-submit svg {
+  flex-shrink: 0;
+}
+
+/* Gráficas de barras horizontales */
+.barra-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.barra-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  min-width: 140px;
+  text-align: right;
+}
+
+.barra-container {
+  flex: 1;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.barra-fill {
+  height: 100%;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+  transition: width 0.5s ease;
+}
+
+.barra-valor {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
 }

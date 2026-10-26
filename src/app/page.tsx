@@ -143,8 +143,8 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Resultados (solo admin) */}
-      {rol === 'admin' && (
+      {/* Resultados */}
+      {(
         <section className="modules-section">
           <div className="section-label-row">
             <span className="section-label-pill section-label-pill--purple">
@@ -158,14 +158,14 @@ const Dashboard = () => {
           <div className="modules-header">
             <div>
               <h2 className="modules-title">Panel de Resultados</h2>
-              <p className="modules-desc">Consulta todas las evaluaciones registradas en el sistema</p>
+              <p className="modules-desc">{rol === 'admin' ? 'Consulta todas las evaluaciones registradas en el sistema' : 'Consulta las evaluaciones en las que participas como evaluado o evaluador'}</p>
             </div>
           </div>
           <div className="modules-grid modules-grid--2col">
             <Link href="/resultados" className="module-card" style={{ animationDelay: '0s' }}>
               <div className="card-accent-bar" style={{ background: '#7c3aed' }} />
               <div className="card-top">
-                <span className="card-tag">Admin</span>
+                <span className="card-tag">{rol === 'admin' ? 'Admin' : 'Mis resultados'}</span>
                 <div className="card-icon-wrap" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
                   <div className="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -177,7 +177,7 @@ const Dashboard = () => {
               </div>
               <div className="card-body">
                 <h3 className="card-title">Evaluación Anual 2026</h3>
-                <p className="card-desc">Visualiza todas las evaluaciones de desempeño, notas, potencial y clasificación Nine Box de cada colaborador.</p>
+                <p className="card-desc">{rol === 'admin' ? 'Visualiza todas las evaluaciones de desempeño, notas, potencial y clasificación Nine Box de cada colaborador.' : 'Revisa las evaluaciones de desempeño que te han realizado y las que has realizado a otros colaboradores.'}</p>
               </div>
               <div className="card-footer">
                 <span className="card-cta" style={{ color: '#7c3aed' }}>
@@ -188,6 +188,36 @@ const Dashboard = () => {
                 </span>
               </div>
             </Link>
+            {rol === 'admin' && (
+            <Link href="/resultados/people" className="module-card" style={{ animationDelay: '0.08s' }}>
+              <div className="card-accent-bar" style={{ background: '#10b981' }} />
+              <div className="card-top">
+                <span className="card-tag">Admin</span>
+                <div className="card-icon-wrap" style={{ background: '#f0fdf4', color: '#10b981' }}>
+                  <div className="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <h3 className="card-title">Programa PEOPLE</h3>
+                <p className="card-desc">Consulta las solicitudes de días remunerados, beneficios adicionales y programa PEOPLE Cuidado.</p>
+              </div>
+              <div className="card-footer">
+                <span className="card-cta" style={{ color: '#10b981' }}>
+                  Ver solicitudes
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="card-arrow">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+            </Link>
+            )}
           </div>
         </section>
       )}

@@ -17,11 +17,20 @@ interface CompetenciaData {
 }
 
 interface RespuestaState {
-  competenciaId: string;
-  puntuacion: Score;
+  competenciaId: string
+  puntuacion: Score
+  nivel: string
 }
 
-const PASOS = ['Datos', 'Transversales', 'Operativo', 'Táctico', 'Estratégico', 'Potencial'];
+const PASOS_DESCENDENTE = ['Datos', 'Desempeño del Cargo', 'Competencias', 'Potencial', 'Retroalimentación'];
+const PASOS_ASCENDENTE = ['Datos', 'Competencias', 'Retroalimentación'];
+
+const CARGOS: { value: string; label: string; nivel: string }[] = [
+  { value: 'analista',  label: 'Analista',  nivel: 'operativo' },
+  { value: 'asistente', label: 'Asistente', nivel: 'operativo' },
+  { value: 'lider',     label: 'Líderes',   nivel: 'tactico' },
+  { value: 'gerente',   label: 'Gerentes',  nivel: 'estrategico' },
+];
 
 const TIPO_TITULO: Record<string, string> = {
   transversal: 'Competencias Transversales',
@@ -33,10 +42,10 @@ const TIPO_TITULO: Record<string, string> = {
 
 const criterios: { valor: number; label: string }[] = [
   { valor: 5, label: 'SOBRESALIENTE' },
-  { valor: 4, label: 'SUPERA' },
-  { valor: 3, label: 'CUMPLE' },
-  { valor: 2, label: 'LIMITADA' },
-  { valor: 1, label: 'NO CUMPLE' },
+  { valor: 4, label: 'SUPERIOR' },
+  { valor: 3, label: 'ESPERADO' },
+  { valor: 2, label: 'BAJO' },
+  { valor: 1, label: 'MUY BAJO' },
 ];
 
 const comportamientos: Record<string, Record<number, string>> = {
@@ -46,13 +55,6 @@ const comportamientos: Record<string, Record<number, string>> = {
     3: 'Cumple las normas, políticas y lineamientos de la organización de manera adecuada y consistente.',
     2: 'Presenta incumplimientos ocasionales o requiere recordatorios frecuentes sobre normas, procedimientos o compromisos adquiridos.',
     1: 'Incumple normas, políticas o compromisos de manera recurrente, generando riesgos para la organización.',
-  },
-  'CALIDAD DE TRABAJO': {
-    5: 'Entrega resultados excepcionales, mejora continuamente los procesos y se convierte en referente de calidad para otros colaboradores.',
-    4: 'Entrega trabajos de alta calidad, con mínimos errores y escasa necesidad de supervisión o corrección.',
-    3: 'Entrega trabajos con la calidad esperada, cumpliendo los estándares y requisitos establecidos.',
-    2: 'Presenta errores recurrentes o incumplimientos parciales que requieren seguimiento o correcciones frecuentes.',
-    1: 'Presenta errores frecuentes que afectan significativamente la calidad, oportunidad o confiabilidad de los resultados.',
   },
   'ORIENTACIÓN AL CLIENTE': {
     5: 'Supera constantemente las expectativas del cliente, anticipa necesidades y genera experiencias altamente satisfactorias.',
@@ -87,21 +89,7 @@ const comportamientos: Record<string, Record<number, string>> = {
     4: 'Colabora de manera proactiva, comparte información y contribuye positivamente al logro de objetivos comunes.',
     3: 'Mantiene relaciones adecuadas de trabajo y colabora cuando es requerido para alcanzar los objetivos del equipo.',
     2: 'Colabora de manera limitada o presenta dificultades ocasionales para trabajar con otros.',
-    1: 'Presenta dificultades recurrentes para colaborar con otros, afectando el logro de objetivos del equipo.',
-  },
-  'DESARROLLO DE EQUIPOS DE ALTO DESEMPEÑO': {
-    5: 'Desarrolla equipos altamente comprometidos y autónomos. Identifica y potencia el talento, promueve sucesiones y genera resultados sostenibles a través del equipo.',
-    4: 'Establece objetivos claros, delega efectivamente y promueve el desarrollo continuo de los colaboradores.',
-    3: 'Dirige adecuadamente al equipo, realiza seguimiento al desempeño y brinda orientación cuando es necesario.',
-    2: 'Presenta dificultades para delegar, desarrollar o alinear al equipo hacia los objetivos establecidos.',
-    1: 'No desarrolla a las personas, genera dependencia excesiva o presenta problemas recurrentes en la gestión del equipo.',
-  },
-  'PENSAMIENTO ESTRATÉGICO': {
-    5: 'Anticipa tendencias, identifica oportunidades de alto impacto y toma decisiones que generan ventajas competitivas para la organización.',
-    4: 'Analiza información de manera integral, identifica riesgos y oportunidades relevantes y propone acciones alineadas al negocio.',
-    3: 'Comprende adecuadamente el contexto de la organización y toma decisiones coherentes con los objetivos estratégicos.',
-    2: 'Analiza parcialmente la información disponible y presenta dificultades para anticipar riesgos o impactos de sus decisiones.',
-    1: 'Se enfoca únicamente en la operación inmediata y toma decisiones sin considerar el contexto o los objetivos estratégicos de la organización.',
+    1: 'Presenta dificultades frecuentes para trabajar de manera colaborativa, comparte información de forma limitada y muestra poca disposición para coordinarse con otros, lo que afecta el cumplimiento de los objetivos del equipo.',
   },
   'LIDERAZGO': {
     5: 'Inspira y moviliza al equipo de manera sobresaliente. Desarrolla personas, genera compromiso y logra resultados sostenibles a través de otros.',
@@ -117,66 +105,112 @@ const comportamientos: Record<string, Record<number, string>> = {
     2: 'Requiere apoyo frecuente para analizar situaciones o identificar alternativas de solución.',
     1: 'Presenta dificultades recurrentes para analizar información, identificar problemas o tomar decisiones efectivas.',
   },
-  'CAPACIDAD DE APRENDIZAJE (LEARNING AGILITY)': {
-    5: 'Aprende con gran rapidez, busca activamente nuevos conocimientos y los aplica exitosamente en contextos diferentes.',
-    4: 'Aprende rápidamente y aplica lo aprendido de forma efectiva en su trabajo.',
-    3: 'Aprende los conocimientos requeridos dentro de los tiempos esperados.',
-    2: 'Requiere acompañamiento frecuente para adquirir y aplicar nuevos conocimientos.',
-    1: 'Presenta dificultades significativas para aprender o aplicar nuevos conocimientos.',
+  'DESARROLLO DE EQUIPOS DE ALTO DESEMPEÑO': {
+    5: 'Desarrolla equipos altamente comprometidos y autónomos. Identifica y potencia el talento, promueve sucesiones y genera resultados sostenibles a través del equipo.',
+    4: 'Establece objetivos claros, delega efectivamente y promueve el desarrollo continuo de los colaboradores.',
+    3: 'Dirige adecuadamente al equipo, realiza seguimiento al desempeño y brinda orientación cuando es necesario.',
+    2: 'Presenta dificultades para delegar, desarrollar o alinear al equipo hacia los objetivos establecidos.',
+    1: 'No desarrolla a las personas, genera dependencia excesiva o presenta problemas recurrentes en la gestión del equipo.',
   },
-  'ADAPTABILIDAD Y MANEJO DE LA INCERTIDUMBRE': {
-    5: 'Busca activamente desafíos nuevos y se adapta con facilidad a contextos cambiantes.',
-    4: 'Se adapta rápidamente a cambios y nuevos retos manteniendo un desempeño sólido.',
-    3: 'Se adapta adecuadamente a los cambios esperados.',
-    2: 'Requiere tiempo considerable para ajustarse a nuevas situaciones.',
-    1: 'Presenta resistencia frecuente al cambio y afecta su efectividad.',
+  'PENSAMIENTO ESTRATÉGICO': {
+    5: 'Anticipa tendencias, identifica oportunidades de alto impacto y toma decisiones que generan ventajas competitivas para la organización.',
+    4: 'Analiza información de manera integral, identifica riesgos y oportunidades relevantes y propone acciones alineadas al negocio.',
+    3: 'Comprende adecuadamente el contexto de la organización y toma decisiones coherentes con los objetivos estratégicos.',
+    2: 'Analiza parcialmente la información disponible y presenta dificultades para anticipar riesgos o impactos de sus decisiones.',
+    1: 'Se enfoca únicamente en la operación inmediata y toma decisiones sin considerar el contexto o los objetivos estratégicos de la organización.',
   },
-  'CAPACIDAD PARA ASUMIR MAYORES RESPONSABILIDADES': {
-    5: 'Ya asume con éxito responsabilidades significativamente superiores a su posición actual.',
-    4: 'Demuestra estar preparado para asumir funciones de mayor complejidad en el corto plazo.',
-    3: 'Cumple adecuadamente las responsabilidades actuales y muestra potencial de crecimiento gradual.',
-    2: 'Requiere fortalecimiento antes de asumir mayores responsabilidades.',
-    1: 'Actualmente presenta dificultades para gestionar las responsabilidades de su cargo.',
+  'AGILIDAD DE APRENDIZAJE': {
+    5: 'Aprende con rapidez, busca activamente nuevos aprendizajes, incorpora retroalimentación y aplica lo aprendido con éxito en situaciones nuevas o de mayor complejidad.',
+    4: 'Aprende rápidamente, incorpora nuevos conocimientos y los aplica efectivamente ante situaciones diferentes a las habituales.',
+    3: 'Adquiere los conocimientos necesarios y los aplica adecuadamente cuando enfrenta nuevas situaciones o responsabilidades.',
+    2: 'Requiere acompañamiento frecuente para incorporar nuevos conocimientos y trasladarlos a situaciones diferentes.',
+    1: 'Presenta dificultades recurrentes para incorporar aprendizajes o aplicarlos frente a situaciones nuevas.',
   },
-  'INFLUENCIA Y LIDERAZGO POTENCIAL': {
-    5: 'Es referente natural para otros y genera influencia positiva más allá de su área de trabajo.',
-    4: 'Influye positivamente en compañeros y facilita el logro de objetivos comunes.',
-    3: 'Mantiene relaciones efectivas y genera colaboración cuando es necesario.',
-    2: 'Su capacidad de influencia es limitada o inconsistente.',
-    1: 'Presenta dificultades para generar credibilidad o colaboración.',
+  'GESTIÓN DE LA COMPLEJIDAD Y ADAPTACIÓN': {
+    5: 'Se desenvuelve con efectividad ante escenarios de alta incertidumbre y complejidad, analiza situaciones de manera integral, anticipa riesgos y cambios y genera soluciones o mejoras de alto impacto.',
+    4: 'Se adapta rápidamente a cambios y nuevos retos, analiza situaciones de manera estructurada, identifica alternativas y responde efectivamente aun cuando aumenta la complejidad.',
+    3: 'Se adapta adecuadamente a cambios y situaciones nuevas, analiza los problemas habituales y encuentra soluciones apropiadas dentro de su contexto de trabajo.',
+    2: 'Requiere tiempo y acompañamiento para adaptarse a cambios o situaciones poco conocidas y para analizar problemas que presentan mayor complejidad.',
+    1: 'Presenta dificultades frecuentes para adaptarse a cambios o situaciones nuevas y para analizar y resolver problemas cuando las condiciones se apartan de lo habitual.',
   },
-  'PENSAMIENTO ANALÍTICO Y RESOLUCIÓN DE PROBLEMAS': {
-    5: 'Analiza escenarios complejos, anticipa riesgos y genera soluciones innovadoras de alto impacto.',
-    4: 'Identifica causas, evalúa alternativas y propone soluciones efectivas de manera consistente.',
-    3: 'Analiza adecuadamente los problemas habituales y propone soluciones apropiadas.',
-    2: 'Requiere apoyo frecuente para analizar problemas o tomar decisiones.',
-    1: 'Presenta dificultades recurrentes para analizar situaciones y resolver problemas.',
+  'CAPACIDAD PARA ASUMIR MAYOR RESPONSABILIDAD': {
+    5: 'Demuestra capacidad para asumir responsabilidades significativamente mayores, gestionando con autonomía situaciones de alta complejidad y generando impacto más allá de su responsabilidad actual.',
+    4: 'Evidencia condiciones claras para asumir responsabilidades de mayor alcance o complejidad en el corto o mediano plazo, con un nivel de autonomía creciente.',
+    3: 'Demuestra condiciones para ampliar progresivamente su nivel de responsabilidad, alcance o complejidad, con el desarrollo y acompañamiento correspondiente.',
+    2: 'Requiere fortalecimiento y desarrollo adicional antes de asumir responsabilidades de mayor alcance o complejidad.',
+    1: 'Presenta dificultades para asumir mayores niveles de autonomía, responsabilidad o complejidad, incluso cuando cuenta con las condiciones y acompañamiento requeridos para desarrollarlos.',
   },
 };
+
+const desempenoCargo = [
+  {
+    key: 'calidad' as const,
+    nombre: 'CALIDAD',
+    descripcion: 'Evalúa el nivel de precisión, efectividad, cumplimiento de estándares y ausencia de errores en la ejecución de las responsabilidades y entregables asignados.',
+    pregunta: '¿En qué medida la persona cumple con los estándares de calidad, precisión y efectividad en sus entregables?',
+    comportamientos: {
+      5: 'Mantiene de manera consistente un nivel excepcional de calidad, anticipa y previene errores y contribuye a mejorar los estándares o la calidad de los procesos.',
+      4: 'Mantiene consistentemente un nivel de calidad superior al esperado, presenta pocos errores y requiere mínimas correcciones en sus entregables.',
+      3: 'Ejecuta sus responsabilidades de acuerdo con los estándares definidos para el cargo, manteniendo un nivel de calidad y precisión acorde con lo esperado.',
+      2: 'Cumple parcialmente los estándares de calidad; presenta errores recurrentes y requiere correcciones o seguimiento para alcanzar el resultado esperado.',
+      1: 'Presenta errores frecuentes o incumplimientos que afectan significativamente la calidad de los resultados y requiere seguimiento y corrección constante.',
+    },
+  },
+  {
+    key: 'cantidadProductividad' as const,
+    nombre: 'CANTIDAD / PRODUCTIVIDAD',
+    descripcion: 'Evalúa el nivel de cumplimiento del volumen de trabajo, actividades, productos, servicios o entregables esperados de acuerdo con las responsabilidades y estándares definidos para el cargo.',
+    pregunta: '¿En qué medida la persona cumple con el volumen de trabajo y los entregables esperados para su cargo?',
+    comportamientos: {
+      5: 'Supera consistentemente el volumen de trabajo esperado, optimiza su capacidad de producción y genera resultados significativamente superiores a los requeridos para su cargo.',
+      4: 'Supera de manera frecuente el volumen de trabajo esperado, manteniendo un nivel adecuado de calidad en sus resultados.',
+      3: 'Cumple de manera consistente con el volumen de trabajo establecido para su cargo y atiende las responsabilidades asignadas dentro del nivel esperado.',
+      2: 'Alcanza parcialmente el volumen de trabajo esperado y requiere seguimiento para cumplir con las responsabilidades asignadas.',
+      1: 'Produce un volumen de trabajo significativamente inferior al esperado y presenta incumplimientos frecuentes frente a las responsabilidades asignadas.',
+    },
+  },
+  {
+    key: 'tiempoOportunidad' as const,
+    nombre: 'TIEMPO / OPORTUNIDAD',
+    descripcion: 'Evalúa el nivel de cumplimiento de los plazos, cronogramas, tiempos de respuesta y fechas establecidas para la ejecución de las responsabilidades y entrega de resultados.',
+    pregunta: '¿En qué medida la persona cumple con los plazos y tiempos establecidos para sus responsabilidades?',
+    comportamientos: {
+      5: 'Cumple consistentemente antes de los plazos establecidos, anticipa necesidades y contribuye a optimizar los tiempos de ejecución o respuesta del proceso.',
+      4: 'Cumple regularmente los plazos establecidos y, cuando las condiciones lo permiten, anticipa entregas o responde oportunamente a requerimientos prioritarios.',
+      3: 'Cumple de manera consistente con los tiempos y plazos establecidos para sus responsabilidades y entregables.',
+      2: 'Cumple parcialmente los tiempos establecidos y presenta retrasos recurrentes que requieren seguimiento o intervención.',
+      1: 'Incumple frecuentemente los plazos establecidos y sus retrasos afectan el desarrollo de actividades, procesos o resultados del equipo.',
+    },
+  },
+];
 
 const definiciones: Record<string, { descripcion: string; pregunta: string }> = {
   'ACTÚA CON INTEGRIDAD': { descripcion: 'Capacidad para actuar con honestidad, ética y coherencia, respetando normas y valores organizacionales en todas sus decisiones y acciones.', pregunta: '¿En qué medida la persona actúa con honestidad, coherencia y respeto por las normas de la empresa en su trabajo diario?' },
-  'CALIDAD DE TRABAJO': { descripcion: 'Capacidad para ejecutar sus funciones con precisión, orden y cumplimiento de estándares, asegurando resultados confiables y oportunos.', pregunta: '¿En qué medida la persona entrega su trabajo con precisión, orden y cumplimiento de los estándares establecidos?' },
-  'ORIENTACIÓN AL CLIENTE': { descripcion: 'Capacidad para comprender las necesidades del cliente y brindar soluciones oportunas, efectivas y con enfoque en el servicio.', pregunta: '¿En qué medida la persona comprende las necesidades del cliente y brinda soluciones oportunas y de calidad?' },
-  'ADAPTACIÓN AL CAMBIO': { descripcion: 'Capacidad para ajustarse de manera ágil y positiva a cambios en procesos, prioridades o entorno, manteniendo su desempeño.', pregunta: '¿En qué medida la persona se adapta a cambios en procesos, prioridades o entornos de trabajo sin afectar su desempeño?' },
-  'ORIENTACIÓN AL LOGRO': { descripcion: 'Capacidad para actuar con sentido de urgencia, responder a las exigencias del entorno y alcanzar resultados de manera efectiva.', pregunta: '¿En qué medida la persona actúa con sentido de urgencia y logra resultados en situaciones de alta exigencia?' },
-  'CAPACIDAD DE APRENDIZAJE': { descripcion: 'Capacidad para adquirir, asimilar y aplicar nuevos conocimientos de manera efectiva en su trabajo.', pregunta: '¿En qué medida la persona aprende y aplica nuevos conocimientos para mejorar su desempeño?' },
-  'TRABAJO COLABORATIVO': { descripcion: 'Capacidad para relacionarse efectivamente con otros, generando colaboración y redes de trabajo que faciliten el logro de objetivos.', pregunta: '¿En qué medida la persona colabora con otros y construye relaciones que favorecen el logro de objetivos?' },
-  'DESARROLLO DE EQUIPOS DE ALTO DESEMPEÑO': { descripcion: 'Capacidad para desarrollar y potenciar el equipo, estableciendo objetivos claros, prioridades y promoviendo el empoderamiento para el logro de resultados.', pregunta: '¿En qué medida la persona desarrolla a su equipo, establece objetivos claros y fomenta el empoderamiento para lograr resultados?' },
-  'PENSAMIENTO ESTRATÉGICO': { descripcion: 'Capacidad para comprender el entorno, identificar oportunidades y riesgos, y tomar decisiones alineadas a la estrategia del negocio.', pregunta: '¿En qué medida la persona analiza el entorno, identifica oportunidades o riesgos y toma decisiones alineadas a la estrategia del negocio?' },
-  'LIDERAZGO': { descripcion: 'Capacidad para dirigir, influir y desarrollar equipos para el logro de objetivos.', pregunta: '¿En qué medida esta persona demuestra capacidad de liderazgo en la dirección, seguimiento y desarrollo de su equipo?' },
-  'PENSAMIENTO ANALÍTICO': { descripcion: 'Capacidad para analizar información, identificar problemas y tomar decisiones basadas en datos.', pregunta: '¿En qué medida la persona analiza información, identifica problemas y propone soluciones efectivas?' },
-  'CAPACIDAD DE APRENDIZAJE (LEARNING AGILITY)': { descripcion: 'Capacidad para adquirir rápidamente nuevos conocimientos, adaptarse a situaciones desconocidas y aplicar lo aprendido con efectividad.', pregunta: '¿En qué medida la persona aprende rápidamente y aplica nuevos conocimientos para enfrentar desafíos cada vez más complejos?' },
-  'ADAPTABILIDAD Y MANEJO DE LA INCERTIDUMBRE': { descripcion: 'Capacidad para responder positivamente a cambios, ambigüedad y nuevos retos.', pregunta: '¿En qué medida la persona se adapta a situaciones nuevas o inciertas manteniendo su efectividad?' },
-  'CAPACIDAD PARA ASUMIR MAYORES RESPONSABILIDADES': { descripcion: 'Capacidad para gestionar retos de mayor complejidad, alcance o impacto organizacional.', pregunta: '¿En qué medida la persona demuestra capacidad para asumir responsabilidades superiores a las de su cargo actual?' },
-  'INFLUENCIA Y LIDERAZGO POTENCIAL': { descripcion: 'Capacidad para generar credibilidad, movilizar a otros e impactar positivamente en su entorno.', pregunta: '¿En qué medida la persona influye positivamente en otros y demuestra características de liderazgo?' },
-  'PENSAMIENTO ANALÍTICO Y RESOLUCIÓN DE PROBLEMAS': { descripcion: 'Capacidad para analizar situaciones, identificar causas y generar soluciones efectivas.', pregunta: '¿En qué medida la persona analiza situaciones complejas y propone soluciones efectivas?' },
+  'ORIENTACIÓN AL CLIENTE': { descripcion: 'Capacidad para comprender y atender las necesidades de clientes internos y externos, brindando soluciones oportunas, efectivas y alineadas con los estándares de servicio de la organización.', pregunta: '¿En qué medida la persona comprende y atiende las necesidades de los clientes internos y externos?' },
+  'ADAPTACIÓN AL CAMBIO': { descripcion: 'Capacidad para ajustarse de manera ágil y positiva a cambios en procesos, prioridades o entorno, manteniendo su desempeño.', pregunta: '¿En qué medida la persona se ajusta de manera ágil y positiva a los cambios en procesos, prioridades o entorno?' },
+  'ORIENTACIÓN AL LOGRO': { descripcion: 'Capacidad para actuar con sentido de urgencia, responder a las exigencias del entorno y alcanzar resultados de manera efectiva.', pregunta: '¿En qué medida la persona actúa con sentido de urgencia y alcanza resultados de manera efectiva?' },
+  'CAPACIDAD DE APRENDIZAJE': { descripcion: 'Capacidad para adquirir, asimilar y aplicar nuevos conocimientos de manera efectiva en su trabajo.', pregunta: '¿En qué medida la persona adquiere, asimilar y aplica nuevos conocimientos de manera efectiva en su trabajo?' },
+  'TRABAJO COLABORATIVO': { descripcion: 'Capacidad para relacionarse efectivamente con otros, generando colaboración y redes de trabajo que faciliten el logro de objetivos.', pregunta: '¿En qué medida la persona se relaciona efectivamente con otros, generando colaboración y redes de trabajo?' },
+  'LIDERAZGO': { descripcion: 'Capacidad para dirigir, influir y desarrollar equipos para el logro de objetivos.', pregunta: '¿En qué medida la persona dirige, influye y desarrolla equipos para el logro de objetivos?' },
+  'PENSAMIENTO ANALÍTICO': { descripcion: 'Capacidad para analizar información, identificar problemas y tomar decisiones basadas en datos.', pregunta: '¿En qué medida la persona analiza información, identifica problemas y toma decisiones basadas en datos?' },
+  'DESARROLLO DE EQUIPOS DE ALTO DESEMPEÑO': { descripcion: 'Capacidad para desarrollar y potenciar el equipo, estableciendo objetivos claros, prioridades y promoviendo el empoderamiento para el logro de resultados.', pregunta: '¿En qué medida la persona desarrolla y potencia su equipo, estableciendo objetivos claros y promoviendo el empoderamiento?' },
+  'PENSAMIENTO ESTRATÉGICO': { descripcion: 'Capacidad para comprender el entorno, identificar oportunidades y riesgos, y tomar decisiones alineadas a la estrategia del negocio.', pregunta: '¿En qué medida la persona comprende el entorno, identifica oportunidades y riesgos, y toma decisiones alineadas a la estrategia?' },
+  'AGILIDAD DE APRENDIZAJE': { descripcion: 'Capacidad para aprender de nuevas experiencias, incorporar conocimientos y retroalimentación, y aplicar lo aprendido en situaciones diferentes o de mayor complejidad ante nuevos desafíos.', pregunta: '¿En qué medida la persona aprende de nuevas experiencias y aplica lo aprendido en situaciones diferentes o de mayor complejidad?' },
+  'GESTIÓN DE LA COMPLEJIDAD Y ADAPTACIÓN': { descripcion: 'Capacidad para mantener la efectividad y capacidad de respuesta ante situaciones nuevas, ambiguas, cambiantes o de creciente complejidad, analizando situaciones y generando respuestas apropiadas.', pregunta: '¿En qué medida la persona mantiene su efectividad ante situaciones nuevas, ambiguas o de creciente complejidad?' },
+  'CAPACIDAD PARA ASUMIR MAYOR RESPONSABILIDAD': { descripcion: 'Capacidad demostrada para asumir progresivamente mayores niveles de responsabilidad, autonomía, complejidad o impacto en el futuro.', pregunta: '¿En qué medida la persona demuestra capacidad para asumir progresivamente mayores niveles de responsabilidad?' },
 };
 
-function calcNineBoxLabel(nota: number): string {
-  if (nota >= 4.0) return 'Alto Potencial';
-  if (nota >= 3.0) return 'Potencial Medio';
-  return 'Potencial Bajo';
+function calcNineBoxLabel(notaFinal: number, notaPotencial: number): string {
+  const clasificar = (nota: number): string => {
+    if (nota >= 4.0) return 'Alto';
+    if (nota >= 3.0) return 'Medio';
+    return 'Bajo';
+  };
+  
+  const desempeno = clasificar(notaFinal);
+  const potencial = clasificar(notaPotencial);
+  
+  return `${potencial} Potencial / ${desempeno} Desempeño`;
 }
 
 function CompetenciaRow({ nombre, valor, onChange, descripcion, pregunta }: {
@@ -206,21 +240,89 @@ function CompetenciaRow({ nombre, valor, onChange, descripcion, pregunta }: {
   );
 }
 
+function NineBoxMatrix({ desempeno, potencial }: { desempeno: number; potencial: number }) {
+  const clasificar = (nota: number): 'Bajo' | 'Medio' | 'Alto' => {
+    if (nota >= 4.0) return 'Alto';
+    if (nota >= 3.0) return 'Medio';
+    return 'Bajo';
+  };
+  
+  const posDesempeno = clasificar(desempeno);
+  const posPotencial = clasificar(potencial);
+  
+  const matrix = [
+    ['Alto Potencial / Bajo Desempeño', 'Alto Potencial / Medio Desempeño', 'Alto Potencial / Alto Desempeño'],
+    ['Medio Potencial / Bajo Desempeño', 'Medio Potencial / Medio Desempeño', 'Medio Potencial / Alto Desempeño'],
+    ['Bajo Potencial / Bajo Desempeño', 'Bajo Potencial / Medio Desempeño', 'Bajo Potencial / Alto Desempeño'],
+  ];
+  
+  const getPosition = (): [number, number] => {
+    const rowMap = { 'Alto': 0, 'Medio': 1, 'Bajo': 2 };
+    const colMap = { 'Bajo': 0, 'Medio': 1, 'Alto': 2 };
+    return [rowMap[posPotencial], colMap[posDesempeno]];
+  };
+  
+  const [activeRow, activeCol] = getPosition();
+  
+  return (
+    <div className="ea-nine-box-matrix">
+      <div className="ea-nine-box-title">Matriz Nine Box</div>
+      <div className="ea-nine-box-container">
+        <div className="ea-nine-box-axis-y">
+          <span className="ea-nine-box-axis-label">← Potencial →</span>
+        </div>
+        <div className="ea-nine-box-grid-wrapper">
+          <div className="ea-nine-box-grid">
+            {matrix.map((row, rowIdx) => (
+              <div key={rowIdx} className="ea-nine-box-row">
+                {row.map((cell, colIdx) => (
+                  <div
+                    key={colIdx}
+                    className={`ea-nine-box-cell ${rowIdx === activeRow && colIdx === activeCol ? 'ea-nine-box-cell--active' : ''}`}
+                  >
+                    {cell}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="ea-nine-box-axis-x">
+            <span className="ea-nine-box-axis-label">← Desempeño →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EvaluacionAnualPage() {
   const { data: session } = useSession();
   const userName = session?.user?.name || 'Usuario Corporativo';
 
   const [paso, setPaso] = useState(1);
+  const [tipoEvaluacion, setTipoEvaluacion] = useState<'descendente' | 'ascendente'>('descendente');
   const [evaluado, setEvaluado] = useState('');
+  const [cargo, setCargo] = useState('');
   const [fecha, setFecha] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [periodo, setPeriodo] = useState(String(new Date().getFullYear()));
+  const [calidad, setCalidad] = useState<Score>(null);
+  const [cantidadProductividad, setCantidadProductividad] = useState<Score>(null);
+  const [tiempoOportunidad, setTiempoOportunidad] = useState<Score>(null);
   const [todasRespuestas, setTodasRespuestas] = useState<RespuestaState[]>([]);
   const [todasCompetencias, setTodasCompetencias] = useState<CompetenciaData[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<{ notaFinal: number; notaPotencial: number; categoriaNineBox: string } | null>(null);
+  const [resultado, setResultado] = useState<{
+    notaFinal: number;
+    notaPotencial: number;
+    categoriaNineBox: string | null;
+    notaDesempenoCargo?: number;
+    notaCompetencias?: number;
+    tipoEvaluacion: 'descendente' | 'ascendente';
+  } | null>(null);
   const [usuariosDB, setUsuariosDB] = useState<string[]>([]);
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); fetch('/api/usuarios').then(r => r.json()).then(d => { if (Array.isArray(d)) setUsuariosDB(d); }).catch(() => {}); }, []);
@@ -230,47 +332,92 @@ export default function EvaluacionAnualPage() {
     setLoading(true);
     fetch('/api/competencias')
       .then(r => r.json())
-      .then((data: CompetenciaData[]) => {
-        setTodasCompetencias(data);
-        setTodasRespuestas(data.map(c => ({ competenciaId: c.id, puntuacion: null })));
-      })
+      .then((data: CompetenciaData[]) => setTodasCompetencias(data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const setPunt = (id: string) => (v: Score) => setTodasRespuestas(prev => prev.map(r => r.competenciaId === id ? { ...r, puntuacion: v } : r));
+  useEffect(() => {
+    const cargoData = CARGOS.find(c => c.value === cargo);
+    const nivel = cargoData?.nivel || '';
+    if (!nivel || todasCompetencias.length === 0) return;
+    const transversales = todasCompetencias.filter(c => c.tipo === 'transversal');
+    const nivelComps = todasCompetencias.filter(c => c.tipo === nivel);
+    const potencial = todasCompetencias.filter(c => c.tipo === 'potencial');
+    
+    const respuestas: RespuestaState[] = [
+      ...transversales.map(c => ({ competenciaId: c.id, puntuacion: null as Score, nivel })),
+      ...nivelComps.map(c => ({ competenciaId: c.id, puntuacion: null as Score, nivel })),
+    ];
+    
+    if (tipoEvaluacion === 'descendente') {
+      respuestas.push(...potencial.map(c => ({ competenciaId: c.id, puntuacion: null as Score, nivel: 'potencial' })));
+    }
+    
+    setTodasRespuestas(respuestas);
+  }, [cargo, todasCompetencias, tipoEvaluacion]);
 
-  const respuestasDesempeno = todasRespuestas.filter(r => {
-    const comp = todasCompetencias.find(c => c.id === r.competenciaId);
-    return comp && comp.tipo !== 'potencial';
-  });
-  const respuestasPotencial = todasRespuestas.filter(r => {
-    const comp = todasCompetencias.find(c => c.id === r.competenciaId);
-    return comp && comp.tipo === 'potencial';
-  });
+  const setPunt = (id: string, nivel: string) => (v: Score) => setTodasRespuestas(prev => prev.map(r => r.competenciaId === id && r.nivel === nivel ? { ...r, puntuacion: v } : r));
 
-  const notaDesempeno = useMemo(() => {
-    const scored = respuestasDesempeno.filter(r => r.puntuacion !== null) as { puntuacion: number }[];
-    return scored.length > 0 ? scored.reduce((s, r) => s + r.puntuacion, 0) / scored.length : null;
-  }, [respuestasDesempeno]);
+  const respuestasDesempeno = todasRespuestas.filter(r => r.nivel !== 'potencial');
+  const respuestasPotencial = todasRespuestas.filter(r => r.nivel === 'potencial');
+
+  const PESOS_VAL: Record<string, { transversal: number; nivel: number }> = {
+    operativo: { transversal: 0.4, nivel: 0.6 },
+    tactico: { transversal: 0.4, nivel: 0.6 },
+    estrategico: { transversal: 0.3, nivel: 0.7 },
+  };
+  const cargoNivel = CARGOS.find(c => c.value === cargo)?.nivel || '';
+  const peso = PESOS_VAL[cargoNivel] || { transversal: 0.5, nivel: 0.5 };
+
+  const notaCompetencias = useMemo(() => {
+    const trans = respuestasDesempeno.filter(r => r.puntuacion !== null && r.nivel === cargoNivel && todasCompetencias.find(c => c.id === r.competenciaId)?.tipo === 'transversal') as { puntuacion: number }[];
+    const niv = respuestasDesempeno.filter(r => r.puntuacion !== null && r.nivel === cargoNivel && todasCompetencias.find(c => c.id === r.competenciaId)?.tipo !== 'transversal') as { puntuacion: number }[];
+    const promTrans = trans.length > 0 ? trans.reduce((s, r) => s + r.puntuacion, 0) / trans.length : 0;
+    const promNiv = niv.length > 0 ? niv.reduce((s, r) => s + r.puntuacion, 0) / niv.length : 0;
+    return (trans.length > 0 || niv.length > 0) ? (promTrans * peso.transversal) + (promNiv * peso.nivel) : null;
+  }, [respuestasDesempeno, cargoNivel, peso, todasCompetencias]);
+
+  const notaDesempenoCargo = useMemo(() => {
+    if (calidad === null || cantidadProductividad === null || tiempoOportunidad === null) return null;
+    return (calidad + cantidadProductividad + tiempoOportunidad) / 3;
+  }, [calidad, cantidadProductividad, tiempoOportunidad]);
+
+  const resultadoGlobal = useMemo(() => {
+    if (notaDesempenoCargo === null || notaCompetencias === null) return null;
+    return (notaDesempenoCargo * 0.6) + (notaCompetencias * 0.4);
+  }, [notaDesempenoCargo, notaCompetencias]);
 
   const notaPotencial = useMemo(() => {
     const scored = respuestasPotencial.filter(r => r.puntuacion !== null) as { puntuacion: number }[];
     return scored.length > 0 ? scored.reduce((s, r) => s + r.puntuacion, 0) / scored.length : null;
   }, [respuestasPotencial]);
 
-  const categoriaNineBox = notaPotencial !== null ? calcNineBoxLabel(notaPotencial) : null;
+  const categoriaNineBox = (resultadoGlobal !== null && notaPotencial !== null) ? calcNineBoxLabel(resultadoGlobal, notaPotencial) : null;
 
-  const puedeAvanzar = evaluado && fecha && periodo;
+  const puedeAvanzar = evaluado && cargo && fecha && periodo;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError(null);
-    const cDes = respuestasDesempeno.filter(r => r.puntuacion !== null) as { competenciaId: string; puntuacion: number }[];
-    const cPot = respuestasPotencial.filter(r => r.puntuacion !== null) as { competenciaId: string; puntuacion: number }[];
+    const cDes = respuestasDesempeno.filter(r => r.puntuacion !== null).map(r => ({ competenciaId: r.competenciaId, puntuacion: r.puntuacion!, nivel: r.nivel }));
+    const cPot = tipoEvaluacion === 'descendente' 
+      ? respuestasPotencial.filter(r => r.puntuacion !== null).map(r => ({ competenciaId: r.competenciaId, puntuacion: r.puntuacion!, nivel: r.nivel }))
+      : [];
     try {
-      const result = await guardarEvaluacion({ evaluadoNombre: evaluado, periodo, respuestasDesempeno: cDes, respuestasPotencial: cPot });
+      const result = await guardarEvaluacion({
+        evaluadoNombre: evaluado,
+        cargo,
+        periodo,
+        feedback,
+        respuestas: cDes,
+        respuestasPotencial: cPot,
+        calidad: tipoEvaluacion === 'descendente' ? calidad : null,
+        cantidadProductividad: tipoEvaluacion === 'descendente' ? cantidadProductividad : null,
+        tiempoOportunidad: tipoEvaluacion === 'descendente' ? tiempoOportunidad : null,
+        tipoEvaluacion,
+      });
       setResultado(result); setSubmitted(true); window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) { setSubmitError(err instanceof Error ? err.message : 'Error al guardar.'); }
     finally { setIsSubmitting(false); }
@@ -284,22 +431,56 @@ export default function EvaluacionAnualPage() {
           <h2>Evaluación guardada con éxito</h2>
           <p>La evaluación de desempeño 2026 ha sido registrada correctamente.</p>
           {resultado && (
-            <div className="ea-resultados">
-              <div className="ea-nota-final-big"><span className="ea-nota-label">Nota Desempeño</span><span className="ea-nota-value">{resultado.notaFinal.toFixed(1)}</span></div>
-              <div className="ea-nota-final-big"><span className="ea-nota-label">Nota Potencial</span><span className="ea-nota-value">{resultado.notaPotencial.toFixed(1)}</span></div>
-              <div className="ea-nine-box-badge"><span className="ea-nine-box-label">Nine Box</span><span className={`ea-nine-box-value ea-nine-box--${resultado.categoriaNineBox === 'Alto Potencial' ? 'alto' : resultado.categoriaNineBox === 'Potencial Medio' ? 'medio' : 'bajo'}`}>{resultado.categoriaNineBox}</span></div>
+            <div className="ea-resultados-container">
+              <div className="ea-notas-compactas">
+                {resultado.tipoEvaluacion === 'descendente' && resultado.notaDesempenoCargo !== undefined && (
+                  <div className="ea-nota-compacta">
+                    <span className="ea-nota-compacta-label">Desempeño</span>
+                    <span className="ea-nota-compacta-value">{resultado.notaDesempenoCargo.toFixed(1)}</span>
+                  </div>
+                )}
+                {resultado.notaCompetencias !== undefined && (
+                  <div className="ea-nota-compacta">
+                    <span className="ea-nota-compacta-label">Competencias</span>
+                    <span className="ea-nota-compacta-value">{resultado.notaCompetencias.toFixed(1)}</span>
+                  </div>
+                )}
+                {resultado.tipoEvaluacion === 'descendente' && (
+                  <>
+                    <div className="ea-nota-compacta ea-nota-compacta--highlight">
+                      <span className="ea-nota-compacta-label">Resultado Global</span>
+                      <span className="ea-nota-compacta-value">{resultado.notaFinal.toFixed(1)}</span>
+                    </div>
+                    <div className="ea-nota-compacta">
+                      <span className="ea-nota-compacta-label">Potencial</span>
+                      <span className="ea-nota-compacta-value">{resultado.notaPotencial.toFixed(1)}</span>
+                    </div>
+                    {resultado.categoriaNineBox && (
+                      <div className="ea-nota-compacta">
+                        <span className="ea-nota-compacta-label">Nine Box</span>
+                        <span className={`ea-nine-box-value ea-nine-box--${resultado.categoriaNineBox.includes('Alto') ? 'alto' : resultado.categoriaNineBox.includes('Medio') ? 'medio' : 'bajo'}`}>
+                          {resultado.categoriaNineBox}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              {resultado.tipoEvaluacion === 'descendente' && resultado.categoriaNineBox && (
+                <div className="ea-matrix-side">
+                  <NineBoxMatrix desempeno={resultado.notaFinal} potencial={resultado.notaPotencial} />
+                </div>
+              )}
             </div>
           )}
           <div className="success-actions">
-            <button className="btn-outline-destr" onClick={() => { setEvaluado(''); setFecha(''); setTodasRespuestas([]); setPaso(1); setSubmitted(false); setSubmitError(null); setResultado(null); }}>Nueva evaluación</button>
+            <button className="btn-outline-destr" onClick={() => { setEvaluado(''); setCargo(''); setFecha(''); setFeedback(''); setTodasRespuestas([]); setPaso(1); setSubmitted(false); setSubmitError(null); setResultado(null); }}>Nueva evaluación</button>
             <Link href="/" className="btn-primary-destr">Volver al inicio</Link>
           </div>
         </div>
       </div>
     );
   }
-
-  const tiposPasos = [null, 'transversal', 'operativo', 'tactico', 'estrategico', 'potencial'] as const;
 
   return (
     <div className="destr-page">
@@ -321,7 +502,7 @@ export default function EvaluacionAnualPage() {
 
       <main className="destr-main">
         <div className="ea-steps">
-          {PASOS.map((label, i) => (
+          {(tipoEvaluacion === 'descendente' ? PASOS_DESCENDENTE : PASOS_ASCENDENTE).map((label, i) => (
             <div key={i} className={`ea-step${paso === i + 1 ? ' ea-step--active' : ''}${paso > i + 1 ? ' ea-step--done' : ''}`}>
               <div className="ea-step-circle">{paso > i + 1 ? '✓' : i + 1}</div>
               <span className="ea-step-label">{label}</span>
@@ -335,35 +516,159 @@ export default function EvaluacionAnualPage() {
             <section className="form-section">
               <div className="section-header"><h2 className="section-title">Datos de la Evaluación</h2></div>
               <div className="fields-grid fields-grid--2">
+                <div className="field-group field-group--full">
+                  <label className="field-label">Tipo de Evaluación <span className="required">*</span></label>
+                  <div className="radio-group">
+                    <label className={`radio-option${tipoEvaluacion === 'descendente' ? ' selected' : ''}`}>
+                      <input type="radio" name="tipoEvaluacion" value="descendente" checked={tipoEvaluacion === 'descendente'} onChange={() => setTipoEvaluacion('descendente')} />
+                      Descendente (Jefe → Colaborador)
+                    </label>
+                    <label className={`radio-option${tipoEvaluacion === 'ascendente' ? ' selected' : ''}`}>
+                      <input type="radio" name="tipoEvaluacion" value="ascendente" checked={tipoEvaluacion === 'ascendente'} onChange={() => setTipoEvaluacion('ascendente')} />
+                      Ascendente (Colaborador → Jefe)
+                    </label>
+                  </div>
+                  <p className="field-hint">
+                    {tipoEvaluacion === 'descendente' 
+                      ? 'Evalúa competencias, desempeño del cargo y potencial. Genera resultado global y Nine Box.'
+                      : 'Solo evalúa competencias transversales y de nivel. Es informativa, no genera resultado global.'}
+                  </p>
+                </div>
                 <div className="field-group"><label className="field-label">Evaluador</label><input type="text" className="field-input" value={userName} disabled /></div>
                 <div className="field-group"><label className="field-label">Persona Evaluada <span className="required">*</span></label><PersonSelector value={evaluado} onChange={setEvaluado} placeholder="Nombre completo" required options={usuariosDB.length > 0 ? usuariosDB : undefined} /></div>
+                <div className="field-group"><label className="field-label">Cargo del Evaluado <span className="required">*</span></label><select className="field-input" value={cargo} onChange={e => setCargo(e.target.value)} required><option value="">Seleccionar cargo...</option>{CARGOS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
                 <div className="field-group"><label className="field-label">Periodo <span className="required">*</span></label><input type="number" className="field-input" min={2020} max={2100} value={periodo} onChange={e => setPeriodo(e.target.value)} required /></div>
                 <div className="field-group"><label className="field-label">Fecha <span className="required">*</span></label><input type="date" className="field-input" value={fecha} onChange={e => setFecha(e.target.value)} required /></div>
               </div>
             </section>
           )}
 
-          {paso >= 2 && paso <= 6 && (
+          {/* Desempeño del Cargo - solo descendente, paso 2 */}
+          {paso === 2 && tipoEvaluacion === 'descendente' && (
             <section className="form-section form-section--competencias">
-              <div className="section-header"><h2 className="section-title">{TIPO_TITULO[tiposPasos[paso] as string]}</h2><p className="section-subtitle">Selecciona una opción por competencia</p></div>
-              {loading ? <div className="ea-loading">Cargando...</div> : (
-                <div className="competencias-group">
-                  <div className="competencias-list">
-                    {todasCompetencias.filter(c => c.tipo === tiposPasos[paso]).map(comp => {
-                      const d = definiciones[comp.nombre] || { descripcion: '', pregunta: '' };
-                      const r = todasRespuestas.find(rr => rr.competenciaId === comp.id);
-                      return <CompetenciaRow key={comp.id} nombre={comp.nombre} descripcion={d.descripcion} pregunta={d.pregunta} valor={r?.puntuacion ?? null} onChange={(setPunt(comp.id))} />;
-                    })}
-                  </div>
+              <div className="section-header"><h2 className="section-title">Desempeño en el Cargo</h2><p className="section-subtitle">Evalúa el cumplimiento de las responsabilidades del cargo</p></div>
+              <div className="competencias-group">
+                <div className="competencias-list">
+                  {desempenoCargo.map((dim) => {
+                    const valor = dim.key === 'calidad' ? calidad : dim.key === 'cantidadProductividad' ? cantidadProductividad : tiempoOportunidad;
+                    const onChange = dim.key === 'calidad' ? setCalidad : dim.key === 'cantidadProductividad' ? setCantidadProductividad : setTiempoOportunidad;
+                    return (
+                      <div key={dim.key} className="competencia-row">
+                        <div className="competencia-info">
+                          <span className="competencia-nombre">{dim.nombre}</span>
+                          <p className="competencia-desc">{dim.descripcion}</p>
+                          <span className="competencia-pregunta-label">Pregunta</span>
+                          <p className="competencia-pregunta">{dim.pregunta}</p>
+                        </div>
+                        <div className="competencia-score">
+                          <span className="score-label">Calificación</span>
+                          <div className="ea-score-grid">
+                            {criterios.map(c => (
+                              <button key={c.valor} type="button" className={`ea-score-card${valor === c.valor ? ' ea-score-card--active' : ''}`} onClick={() => onChange(c.valor as Score)}>
+                                <div className="ea-score-card-header"><span className="ea-score-card-num">{c.valor}</span><span className="ea-score-card-label">{c.label}</span></div>
+                                <p className="ea-score-card-desc">{dim.comportamientos[c.valor as 1|2|3|4|5] || ''}</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
             </section>
           )}
 
-          {paso === 6 && (notaDesempeno !== null || notaPotencial !== null) && (
+          {/* Competencias - descendente paso 3, ascendente paso 2 */}
+          {cargoNivel && (
+            ((paso === 3 && tipoEvaluacion === 'descendente') || (paso === 2 && tipoEvaluacion === 'ascendente')) && (
+              <section className="form-section form-section--competencias">
+                <div className="section-header"><h2 className="section-title">{TIPO_TITULO[cargoNivel] || cargoNivel}</h2><p className="section-subtitle">Selecciona una opción por competencia</p></div>
+                {loading ? <div className="ea-loading">Cargando...</div> : (
+                  <>
+                    <div className="competencias-group">
+                      <h3 className="competencias-group-title">Transversales</h3>
+                      <div className="competencias-list">
+                        {todasCompetencias.filter(c => c.tipo === 'transversal').map(comp => {
+                          const d = definiciones[comp.nombre] || { descripcion: '', pregunta: '' };
+                          const r = todasRespuestas.find(rr => rr.competenciaId === comp.id && rr.nivel === cargoNivel);
+                          return <CompetenciaRow key={`${comp.id}-${cargoNivel}`} nombre={comp.nombre} descripcion={d.descripcion} pregunta={d.pregunta} valor={r?.puntuacion ?? null} onChange={(setPunt(comp.id, cargoNivel))} />;
+                        })}
+                      </div>
+                    </div>
+                    <div className="competencias-group">
+                      <h3 className="competencias-group-title competencias-group-title--estrategico">Nivel {TIPO_TITULO[cargoNivel] || cargoNivel}</h3>
+                      <div className="competencias-list">
+                        {todasCompetencias.filter(c => c.tipo === cargoNivel).map(comp => {
+                          const d = definiciones[comp.nombre] || { descripcion: '', pregunta: '' };
+                          const r = todasRespuestas.find(rr => rr.competenciaId === comp.id && rr.nivel === cargoNivel);
+                          return <CompetenciaRow key={`${comp.id}-${cargoNivel}`} nombre={comp.nombre} descripcion={d.descripcion} pregunta={d.pregunta} valor={r?.puntuacion ?? null} onChange={(setPunt(comp.id, cargoNivel))} />;
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </section>
+            )
+          )}
+
+          {/* Potencial - solo descendente, paso 4 */}
+          {paso === 4 && tipoEvaluacion === 'descendente' && (
+            <section className="form-section form-section--competencias">
+              <div className="section-header"><h2 className="section-title">{TIPO_TITULO.potencial}</h2><p className="section-subtitle">Selecciona una opción por competencia</p></div>
+              <div className="competencias-group">
+                <div className="competencias-list">
+                  {todasCompetencias.filter(c => c.tipo === 'potencial').map(comp => {
+                    const d = definiciones[comp.nombre] || { descripcion: '', pregunta: '' };
+                    const r = todasRespuestas.find(rr => rr.competenciaId === comp.id && rr.nivel === 'potencial');
+                    return <CompetenciaRow key={comp.id} nombre={comp.nombre} descripcion={d.descripcion} pregunta={d.pregunta} valor={r?.puntuacion ?? null} onChange={(setPunt(comp.id, 'potencial'))} />;
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Retroalimentación y Feedforward - descendente paso 5, ascendente paso 3 */}
+          {((paso === 5 && tipoEvaluacion === 'descendente') || (paso === 3 && tipoEvaluacion === 'ascendente')) && (
+            <section className="form-section">
+              <div className="section-header"><h2 className="section-title">Retroalimentación y Feedforward</h2></div>
+              <div className="form-grid">
+                <div className="form-group form-group--full">
+                  <label className="field-label">Comentarios y retroalimentación</label>
+                  <textarea className="field-input" rows={6} value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Resumen de la retroalimentación: fortalezas identificadas, áreas de mejora, compromisos de desarrollo y acciones futuras acordadas con el evaluado..." style={{ width: '100%', maxWidth: '100%' }} />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Resumen - último paso según tipo */}
+          {((paso === 5 && tipoEvaluacion === 'descendente') || (paso === 3 && tipoEvaluacion === 'ascendente')) && (resultadoGlobal !== null || notaCompetencias !== null || notaPotencial !== null) && (
             <div className="ea-resumen">
-              {notaDesempeno !== null && <div className="ea-nota-final"><span className="ea-nota-label">Desempeño</span><span className="ea-nota-value">{notaDesempeno.toFixed(1)}</span></div>}
-              {notaPotencial !== null && <div className="ea-nota-final"><span className="ea-nota-label">Potencial</span><span className="ea-nota-value">{notaPotencial.toFixed(1)}</span>{categoriaNineBox && <span className={`ea-nine-box-preview ea-nine-box--${categoriaNineBox === 'Alto Potencial' ? 'alto' : categoriaNineBox === 'Potencial Medio' ? 'medio' : 'bajo'}`}>{categoriaNineBox}</span>}</div>}
+              {tipoEvaluacion === 'descendente' && notaDesempenoCargo !== null && (
+                <div className="ea-nota-final">
+                  <span className="ea-nota-label">Desempeño del Cargo</span>
+                  <span className="ea-nota-value">{notaDesempenoCargo.toFixed(1)}</span>
+                </div>
+              )}
+              {notaCompetencias !== null && (
+                <div className="ea-nota-final">
+                  <span className="ea-nota-label">Competencias</span>
+                  <span className="ea-nota-value">{notaCompetencias.toFixed(1)}</span>
+                </div>
+              )}
+              {tipoEvaluacion === 'descendente' && resultadoGlobal !== null && (
+                <div className="ea-nota-final ea-nota-final--highlight">
+                  <span className="ea-nota-label">Resultado Global</span>
+                  <span className="ea-nota-value">{resultadoGlobal.toFixed(1)}</span>
+                </div>
+              )}
+              {tipoEvaluacion === 'descendente' && notaPotencial !== null && (
+                <div className="ea-nota-final">
+                  <span className="ea-nota-label">Potencial</span>
+                  <span className="ea-nota-value">{notaPotencial.toFixed(1)}</span>
+                  {categoriaNineBox && <span className={`ea-nine-box-preview ea-nine-box--${categoriaNineBox.includes('Alto') ? 'alto' : categoriaNineBox.includes('Medio') ? 'medio' : 'bajo'}`}>{categoriaNineBox}</span>}
+                </div>
+              )}
             </div>
           )}
 
@@ -372,8 +677,8 @@ export default function EvaluacionAnualPage() {
           <div className="form-actions">
             {paso > 1 && <button type="button" className="btn-cancel" onClick={() => setPaso(p => p - 1)}>← Anterior</button>}
             <Link href="/" className="btn-cancel">Cancelar</Link>
-            {paso < 6 ? (
-              <button type="button" className="btn-submit" onClick={() => setPaso(p => p + 1)} disabled={!puedeAvanzar && paso === 1}>
+            {paso < (tipoEvaluacion === 'descendente' ? 5 : 3) ? (
+              <button type="button" className="btn-submit" onClick={(e) => { e.preventDefault(); setPaso(p => p + 1); }} disabled={!puedeAvanzar && paso === 1}>
                 Siguiente →
               </button>
             ) : (
