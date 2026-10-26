@@ -30,7 +30,7 @@ export default async function PeopleBeneficioPage({ params, searchParams }: { pa
   // Detectar si hay fechas, correo, duracion o hora en las solicitudes
   const tieneFechas = solicitudes.some(s => s.fechas.length > 0 || s.fechaCita);
   const tieneCorreo = solicitudes.some(s => s.correoContacto);
-  const tieneDuracion = solicitudes.some(s => s.duracionMinutos);
+  const tieneDuracion = beneficioId === 'people_cuidado' && solicitudes.some(s => s.duracionMinutos);
   const tieneHora = solicitudes.some(s => s.horaSesion);
   const tieneAdjunto = solicitudes.some(s => s.adjuntoUrl);
 
@@ -107,9 +107,8 @@ export default async function PeopleBeneficioPage({ params, searchParams }: { pa
                  {tieneHora && <th>Hora</th>}
                  {tieneFechas && <th>Fecha(s) seleccionada(s)</th>}
                  {tieneAdjunto && <th>Archivo PDF</th>}
-                 {campoNames.map(name => <th key={name}>{name}</th>)}
-                 <th>Estado</th>
-               </tr>
+                  {campoNames.map(name => <th key={name}>{name}</th>)}
+                </tr>
              </thead>
              <tbody>
                {solicitudes.map(s => (
@@ -139,24 +138,11 @@ export default async function PeopleBeneficioPage({ params, searchParams }: { pa
                         </a>
                       ) : '—'}
                     </td>}
-                   {campoNames.map(name => {
-                     const campo = s.campos.find(c => c.nombre === name);
-                     return <td key={name}>{campo?.valor || '—'}</td>;
-                   })}
-                   <td>
-                     <span style={{
-                       padding: '0.2rem 0.6rem',
-                       borderRadius: '6px',
-                       fontSize: '0.72rem',
-                       fontWeight: 700,
-                       textTransform: 'uppercase',
-                       background: s.estado === 'pendiente' ? '#fef3c7' : '#d1fae5',
-                       color: s.estado === 'pendiente' ? '#92400e' : '#065f46',
-                     }}>
-                       {s.estado}
-                     </span>
-                   </td>
-                 </tr>
+                    {campoNames.map(name => {
+                      const campo = s.campos.find(c => c.nombre === name);
+                      return <td key={name}>{campo?.valor || '—'}</td>;
+                    })}
+                  </tr>
                ))}
              </tbody>
           </table>

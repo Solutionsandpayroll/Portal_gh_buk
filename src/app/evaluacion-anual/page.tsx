@@ -26,10 +26,14 @@ const PASOS_DESCENDENTE = ['Datos', 'Desempeño del Cargo', 'Competencias', 'Pot
 const PASOS_ASCENDENTE = ['Datos', 'Competencias', 'Retroalimentación'];
 
 const CARGOS: { value: string; label: string; nivel: string }[] = [
-  { value: 'analista',  label: 'Analista',  nivel: 'operativo' },
-  { value: 'asistente', label: 'Asistente', nivel: 'operativo' },
-  { value: 'lider',     label: 'Líderes',   nivel: 'tactico' },
-  { value: 'gerente',   label: 'Gerentes',  nivel: 'estrategico' },
+  { value: 'auxiliar',    label: 'Auxiliares',    nivel: 'operativo' },
+  { value: 'asistente',   label: 'Asistentes',   nivel: 'operativo' },
+  { value: 'analista',    label: 'Analistas',    nivel: 'operativo' },
+  { value: 'tecnico',     label: 'Técnicos',     nivel: 'operativo' },
+  { value: 'profesional', label: 'Profesionales', nivel: 'tactico' },
+  { value: 'lider',       label: 'Líderes',      nivel: 'tactico' },
+  { value: 'gerente',     label: 'Gerentes',     nivel: 'estrategico' },
+  { value: 'director',    label: 'Directores',   nivel: 'estrategico' },
 ];
 
 const TIPO_TITULO: Record<string, string> = {
